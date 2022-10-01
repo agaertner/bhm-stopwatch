@@ -135,6 +135,7 @@
     <Compile Include="Core\Controls\StopwatchDisplay.cs" />
     <Compile Include="Core\Controllers\StopwatchController.cs" />
     <Compile Include="Core\Controls\TimeSpanInputPrompt.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StopwatchModule.cs" />
     <Compile Include="UI\Views\CustomSettingsView\CustomSettingsModel.cs" />
     <Compile Include="UI\Views\CustomSettingsView\CustomSettingsPresenter.cs" />
