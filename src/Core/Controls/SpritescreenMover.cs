@@ -30,8 +30,6 @@ namespace Nekres.Stopwatch.Core.Controls
 
         public SpriteScreenMover(IEnumerable<ScreenRegion> screenPositions)
         {
-            WindowBase2.RegisterWindow(this);
-
             this.ZIndex = int.MaxValue - 10;
 
             _clearDrawParameters = new SpriteBatchParameters(SpriteSortMode.Deferred, BlendState.Opaque);
@@ -126,14 +124,10 @@ namespace Nekres.Stopwatch.Core.Controls
 
         public void BringWindowToFront() { /* NOOP */ }
 
-        public bool TopMost => true;
-        public double LastInteraction { get; }
-        public bool CanClose => true;
-
-        protected override void DisposeControl()
-        {
-            WindowBase2.UnregisterWindow(this);
-        }
+        public bool   TopMost            => true;
+        public double LastInteraction    { get; }
+        public bool   CanClose           => true;
+        public bool   CanCloseWithEscape => true;
 
     }
 }

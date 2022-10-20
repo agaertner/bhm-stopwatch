@@ -11,10 +11,8 @@ using Nekres.Stopwatch.UI.Models;
 using Nekres.Stopwatch.UI.Views;
 using System;
 using System.ComponentModel.Composition;
-using System.Threading.Tasks;
 
-namespace Stopwatch
-{
+namespace Stopwatch {
     [Export(typeof(Module))]
     public class StopwatchModule : Module
     {
@@ -109,11 +107,6 @@ namespace Stopwatch
                 AudioVolume = Math.Min(1, SoundVolume.Value / 1000),
                 Position = Position.Value
             };
-        }
-
-        protected override async Task LoadAsync()
-        {
-
         }
 
         public override IView GetSettingsView()
