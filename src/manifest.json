@@ -1,6 +1,6 @@
 {
   "name": "Stopwatch",
-  "version": "0.1.7",
+  "version": "2.0.1",
   "namespace": "Nekres.Stopwatch",
   "package": "Stopwatch.dll",
   "manifest_version": 1,
