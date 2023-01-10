@@ -25,7 +25,9 @@ namespace Nekres.Stopwatch.UI.Views
             get => _lockBounds;
             set
             {
-                if (_lockBounds == value) return;
+                if (_lockBounds == value) {
+                    return;
+                }
 
                 _lockBounds = value;
 
@@ -37,7 +39,9 @@ namespace Nekres.Stopwatch.UI.Views
 
         private void UpdateBoundsLocking(bool locked)
         {
-            if (_settingFlowPanel == null) return;
+            if (_settingFlowPanel == null) {
+                return;
+            }
 
             _settingFlowPanel.ShowBorder = !locked;
             _settingFlowPanel.CanCollapse = !locked;

@@ -134,13 +134,19 @@ namespace Stopwatch {
 
         private void OnToggleActivated(object o, EventArgs e)
         {
-            if (!GameService.GameIntegration.Gw2Instance.Gw2HasFocus || GameService.Gw2Mumble.UI.IsTextInputFocused) return;
+            if (!GameService.GameIntegration.Gw2Instance.Gw2HasFocus || GameService.Gw2Mumble.UI.IsTextInputFocused) {
+                return;
+            }
+
             _stopwatchController.Toggle();
         }
 
         private void SetStartTimeActivated(object o, EventArgs e)
         {
-            if (!GameService.GameIntegration.Gw2Instance.Gw2HasFocus || GameService.Gw2Mumble.UI.IsTextInputFocused) return;
+            if (!GameService.GameIntegration.Gw2Instance.Gw2HasFocus || GameService.Gw2Mumble.UI.IsTextInputFocused) {
+                return;
+            }
+
             _stopwatchController.StartAt();
         }
 

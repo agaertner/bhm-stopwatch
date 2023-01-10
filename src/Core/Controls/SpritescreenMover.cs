@@ -38,6 +38,11 @@ namespace Nekres.Stopwatch.Core.Controls
             _handleTexture = StopwatchModule.ModuleInstance.ContentsManager.GetTexture("handle.png");
         }
 
+        protected override void DisposeControl() {
+            _handleTexture?.Dispose();
+            base.DisposeControl();
+        }
+
         protected override void OnLeftMouseButtonPressed(MouseEventArgs e)
         {
             if (_activeScreenRegion == null)

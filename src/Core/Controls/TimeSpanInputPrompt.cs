@@ -1,4 +1,5 @@
 ﻿using Blish_HUD;
+using Blish_HUD.Content;
 using Blish_HUD.Controls;
 using Blish_HUD.Input;
 using Microsoft.Xna.Framework.Graphics;
@@ -13,7 +14,6 @@ namespace Nekres.Stopwatch.Core.Controls
 {
     internal sealed class TimeSpanInputPrompt : Container
     {
-        private static Texture2D _bgTexture = GameService.Content.GetTexture("tooltip");
         private static BitmapFont _font = GameService.Content.GetFont(ContentService.FontFace.Menomonia, ContentService.FontSize.Size24, ContentService.FontStyle.Regular);
 
         private static TimeSpanInputPrompt _singleton;
@@ -32,6 +32,7 @@ namespace Nekres.Stopwatch.Core.Controls
         private readonly string _cancelButtonButtonText;
 
         private readonly string _defaultValue;
+        private AsyncTexture2D _bgTexture;
 
         private TimeSpanInputPrompt(Action<bool, TimeSpan> callback, string text, string defaultValue, string confirmButtonText, string cancelButtonText)
         {
@@ -42,11 +43,27 @@ namespace Nekres.Stopwatch.Core.Controls
             _cancelButtonButtonText = cancelButtonText;
             this.ZIndex = 999;
             GameService.Input.Keyboard.KeyPressed += OnKeyPressed;
+
+            this.LoadTextures();
+        }
+
+        protected override void DisposeControl() {
+            _singleton = null;
+            _bgTexture?.Dispose();
+            GameService.Input.Keyboard.KeyPressed -= OnKeyPressed;
+            base.DisposeControl();
+        }
+
+        private void LoadTextures() {
+            _bgTexture = GameService.Content.DatAssetCache.GetTextureFromAssetId(156003);
         }
 
         public static void ShowPrompt(Action<bool, TimeSpan> callback, string text, string defaultValue = "", string confirmButtonText = "Confirm", string cancelButtonText = "Cancel")
         {
-            if (_singleton != null) return;
+            if (_singleton != null) {
+                return;
+            }
+
             _singleton = new TimeSpanInputPrompt(callback, text, defaultValue, confirmButtonText, cancelButtonText)
             {
                 Parent = Graphics.SpriteScreen,
@@ -119,7 +136,10 @@ namespace Nekres.Stopwatch.Core.Controls
 
         private void CreateTextInput()
         {
-            if (_inputTextBox != null) return;
+            if (_inputTextBox != null) {
+                return;
+            }
+
             _inputTextBox = new TextBox
             {
                 Parent = this,
@@ -160,7 +180,7 @@ namespace Nekres.Stopwatch.Core.Controls
             spriteBatch.DrawOnCtrl(this, ContentService.Textures.Pixel, new Rectangle(bgBounds.X, bgBounds.Y + bgBounds.Height, bgBounds.Width, 1), Color.Black);
 
             // Draw Background
-            spriteBatch.DrawOnCtrl(this, _bgTexture, bgBounds, Color.White);
+            spriteBatch.DrawOnCtrl(this, _bgTexture, bgBounds, new Rectangle(29, 23, 942, 942), Color.White);
 
             // Draw text
             spriteBatch.DrawStringOnCtrl(this, _text, _font, new Rectangle(bgBounds.X + 6, bgBounds.Y + 5, bgBounds.Width - 11, bgBounds.Height), Color.White, true, HorizontalAlignment.Left, VerticalAlignment.Top);
