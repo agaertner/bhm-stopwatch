@@ -1,13 +1,12 @@
 {
   "name": "Stopwatch",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "namespace": "Nekres.Stopwatch",
   "package": "Stopwatch.dll",
   "manifest_version": 1,
-
   "description": "A stopwatch for the thrill seekers out there. Supports counting down from a given time.",
   "dependencies": {
-    "bh.blishhud": ">=0.11.6"
+    "bh.blishhud": ">=1.0.0"
   },
   "enabled_without_gw2": false,
   "url": "https://github.com/agaertner/bhm-stopwatch",

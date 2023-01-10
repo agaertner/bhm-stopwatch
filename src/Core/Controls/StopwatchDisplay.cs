@@ -27,8 +27,9 @@ namespace Nekres.Stopwatch.Core.Controls
             get => _fontSize;
             set
             {
-                if (SetProperty(ref _fontSize, value))
+                if (SetProperty(ref _fontSize, value)) {
                     _font = Content.GetFont(ContentService.FontFace.Menomonia, value, ContentService.FontStyle.Regular);
+                }
             }
         }
 

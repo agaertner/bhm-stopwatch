@@ -8,11 +8,22 @@ no-bump-message: '^((.+)?\((none|skip|nobump)\):)'
 branches:
   main:
     regex: ^master$|^main$
-    mode: ContinuousDeployment
+    mode: ContinuousDelivery
     tag: ''
-    increment: Patch
+    increment: None
     prevent-increment-of-merged-branch-version: true
+    source-branches: [ 'dev' ]
     track-merge-target: false
     tracks-release-branches: false
     is-release-branch: true
     is-mainline: false
+  dev:
+    regex: ^dev(elop)?(ment)?$
+    increment: Patch
+    prevent-increment-of-merged-branch-version: true
+    source-branches: []
+    track-merge-target: false
+    tracks-release-branches: false
+    is-release-branch: false
+    is-mainline: true
+    pre-release-weight: 0

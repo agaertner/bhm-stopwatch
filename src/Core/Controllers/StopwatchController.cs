@@ -34,7 +34,10 @@ namespace Nekres.Stopwatch.Core.Controllers
             set
             {
                 _fontColor = value;
-                if (_display == null) return;
+                if (_display == null) {
+                    return;
+                }
+
                 _display.Color = value;
             }
         }
@@ -46,7 +49,10 @@ namespace Nekres.Stopwatch.Core.Controllers
             set
             {
                 _fontSize = value;
-                if (_display == null) return;
+                if (_display == null) {
+                    return;
+                }
+
                 _display.FontSize = value;
             }
         }
@@ -58,7 +64,10 @@ namespace Nekres.Stopwatch.Core.Controllers
             set
             {
                 _position = value;
-                if (_display == null) return;
+                if (_display == null) {
+                    return;
+                }
+
                 _display.Location = value;
             }
         }
@@ -70,7 +79,10 @@ namespace Nekres.Stopwatch.Core.Controllers
             set
             {
                 _backgroundOpacity = value;
-                if (_display == null) return;
+                if (_display == null) {
+                    return;
+                }
+
                 _display.BackgroundOpacity = value;
             }
         }
@@ -110,20 +122,28 @@ namespace Nekres.Stopwatch.Core.Controllers
 
         public void Toggle()
         {
-            if (_inInputPrompt) return;
-            if (_stopwatch.IsRunning)
+            if (_inInputPrompt) {
+                return;
+            }
+
+            if (_stopwatch.IsRunning) {
                 _stopwatch.Stop();
-            else
+            } else {
                 Start(StopwatchModule.ModuleInstance.StartTime.Value);
+            }
         }
 
         private void TimeSpanInputPromptCallback(bool confirmed, TimeSpan time)
         {
             _inInputPrompt = false;
-            if (!confirmed) return;
+            if (!confirmed) {
+                return;
+            }
+
             StopwatchModule.ModuleInstance.StartTime.Value = time;
             Reset();
         }
+
         private void Start(TimeSpan? start = null)
         {
             _display ??= new StopwatchDisplay
@@ -181,7 +201,9 @@ namespace Nekres.Stopwatch.Core.Controllers
                 }
             }
 
-            if (_display == null || !_stopwatch.IsRunning) return;
+            if (_display == null || !_stopwatch.IsRunning) {
+                return;
+            }
 
             if (!StopwatchModule.ModuleInstance.TickingSoundDisabledSetting.Value && _stopwatch.Elapsed.Subtract(_prevTick).TotalMilliseconds > 500)
             {
@@ -200,13 +222,16 @@ namespace Nekres.Stopwatch.Core.Controllers
             _display.Text = (current.Ticks < 0 ? "-" : "") + current.ToString(@"hh\:mm\:ss\.fff");
             _display.Color = Color.Lerp(Color.White, _redShift, _stopwatch.ElapsedMilliseconds / (float)_startTime.TotalMilliseconds);
 
-            if (StopwatchModule.ModuleInstance.BeepSoundDisabledSetting.Value) return;
+            if (StopwatchModule.ModuleInstance.BeepSoundDisabledSetting.Value) {
+                return;
+            }
+
             if (current.TotalSeconds is > -0.1 and < 3 && Math.Abs(current.TotalSeconds - _prevBeep.TotalSeconds) > 1)
             {
                 _prevBeep = current;
-                if (current.Ticks > 0)
+                if (current.Ticks > 0) {
                     _beepSfx.Play(AudioVolume, 0, 0);
-                else
+                } else
                 {
                     _longBeepSfx.Play(AudioVolume, 0, 0);
                 }
@@ -217,7 +242,11 @@ namespace Nekres.Stopwatch.Core.Controllers
         {
             _display?.Dispose();
             _stopwatch.Stop();
-            foreach (var sfx in _rewindSfx) sfx.Dispose();
+
+            foreach (var sfx in _rewindSfx) {
+                sfx.Dispose();
+            }
+
             _startSfx.Dispose();
             _tickSfx.Dispose();
             _beepSfx.Dispose();
