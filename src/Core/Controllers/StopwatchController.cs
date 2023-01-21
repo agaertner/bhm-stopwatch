@@ -87,6 +87,8 @@ namespace Nekres.Stopwatch.Core.Controllers
             }
         }
 
+        public bool IsRunning => _stopwatch.IsRunning;
+
         public float AudioVolume { get; set; }
 
         private Color _redShift;
@@ -120,19 +122,6 @@ namespace Nekres.Stopwatch.Core.Controllers
                 prevValue.Equals(TimeSpan.Zero) ? string.Empty : prevValue.ToString(@"hh\:mm\:ss\.fff"));
         }
 
-        public void Toggle()
-        {
-            if (_inInputPrompt) {
-                return;
-            }
-
-            if (_stopwatch.IsRunning) {
-                _stopwatch.Stop();
-            } else {
-                Start(StopwatchModule.ModuleInstance.StartTime.Value);
-            }
-        }
-
         private void TimeSpanInputPromptCallback(bool confirmed, TimeSpan time)
         {
             _inInputPrompt = false;
@@ -144,9 +133,22 @@ namespace Nekres.Stopwatch.Core.Controllers
             Reset();
         }
 
-        private void Start(TimeSpan? start = null)
+        public void Start(TimeSpan? start = null)
         {
-            _display ??= new StopwatchDisplay
+            if (_inInputPrompt || !PlayerPosition.Equals(Vector3.Zero)) {
+                return;
+            }
+
+            _startSfx.Play(AudioVolume, 0, 0);
+
+            // Resume if user did not rewind.
+            if (_display != null && !_stopwatch.IsRunning) {
+                this.Start();
+                return;
+            }
+
+            _display?.Dispose();
+            _display = new StopwatchDisplay
             {
                 Parent = GameService.Graphics.SpriteScreen,
                 Size = new Point(400, 100),
@@ -162,23 +164,26 @@ namespace Nekres.Stopwatch.Core.Controllers
                 _prevBeep = TimeSpan.Zero;
             }
 
-            _startSfx.Play(AudioVolume, 0, 0);
+            this.Start();
+        }
+
+        private void Start() {
             _prevTick = TimeSpan.Zero;
 
-            if (StopwatchModule.ModuleInstance.StartOnMovementEnabled.Value)
-            {
+            if (StopwatchModule.ModuleInstance.StartOnMovementEnabled.Value) {
                 PlayerPosition = GameService.Gw2Mumble.CurrentMap.IsCompetitiveMode ? GameService.Gw2Mumble.PlayerCamera.Position : GameService.Gw2Mumble.PlayerCharacter.Position;
                 _display.Text = $"Awaiting movement...\nX:{PlayerPosition.X:F} Y:{PlayerPosition.Y:F} Z:{PlayerPosition.Z:F}";
                 return;
             }
-
             _stopwatch.Start();
         }
 
         public void Stop()
         {
-            _display?.Dispose();
-            _display = null;
+            if (_inInputPrompt) {
+                return;
+            }
+            _startSfx.Play(AudioVolume, 0, 0);
             _stopwatch.Stop();
         }
 
@@ -192,13 +197,10 @@ namespace Nekres.Stopwatch.Core.Controllers
 
         public void Update()
         {
-            if (!PlayerPosition.Equals(Vector3.Zero))
+            if (!PlayerPosition.Equals(Vector3.Zero) && !PlayerPosition.Equals(GameService.Gw2Mumble.PlayerCharacter.Position))
             {
-                if (!PlayerPosition.Equals(GameService.Gw2Mumble.PlayerCharacter.Position))
-                {
-                    PlayerPosition = Vector3.Zero;
-                    _stopwatch.Start();
-                }
+                PlayerPosition = Vector3.Zero;
+                _stopwatch.Start();
             }
 
             if (_display == null || !_stopwatch.IsRunning) {
@@ -240,9 +242,9 @@ namespace Nekres.Stopwatch.Core.Controllers
 
         public void Dispose()
         {
-            _display?.Dispose();
             _stopwatch.Stop();
-
+            _display?.Dispose();
+            
             foreach (var sfx in _rewindSfx) {
                 sfx.Dispose();
             }
