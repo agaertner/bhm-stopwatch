@@ -31,6 +31,8 @@ namespace Stopwatch {
         public StopwatchModule([Import("ModuleParameters")] ModuleParameters moduleParameters) : base(moduleParameters) => ModuleInstance = this;
 
         internal SettingEntry<KeyBinding> Toggle;
+        internal SettingEntry<KeyBinding> Start;
+        internal SettingEntry<KeyBinding> Stop;
         internal SettingEntry<bool> StartOnMovementEnabled;
         internal SettingEntry<KeyBinding> Reset;
         internal SettingEntry<KeyBinding> SetStartTime;
@@ -50,15 +52,23 @@ namespace Stopwatch {
         protected override void DefineSettings(SettingCollection settings)
         {
             var hotkeys = settings.AddSubCollection("Control Options", true, false);
-            Toggle = hotkeys.DefineSetting("toggleKey", new KeyBinding(Keys.LeftAlt), 
+            Toggle = hotkeys.DefineSetting("toggleKey", new KeyBinding(ModifierKeys.Alt, Keys.OemPipe), 
                 () => "Toggle", 
-                () => "Starts or pauses the stopwatch.");
+                () => "Starts or stops the stopwatch.");
 
-            Reset = hotkeys.DefineSetting("resetKey", new KeyBinding(ModifierKeys.Alt, Keys.R),
+            Start = hotkeys.DefineSetting("startKey", new KeyBinding(Keys.None),
+                () => "Start",
+                () => "Starts the stopwatch.");
+
+            Stop = hotkeys.DefineSetting("stopKey", new KeyBinding(Keys.None),
+                () => "Stop",
+                () => "Stops the stopwatch.");
+
+            Reset = hotkeys.DefineSetting("resetKey", new KeyBinding(ModifierKeys.Alt, Keys.Escape),
                 () => "Reset",
-                () => "Rewinds and stops the stopwatch.");
+                () => "Rewinds the stopwatch.");
 
-            SetStartTime = hotkeys.DefineSetting("setStartTimeKey", new KeyBinding(ModifierKeys.Alt, Keys.C),
+            SetStartTime = hotkeys.DefineSetting("setStartTimeKey", new KeyBinding(ModifierKeys.Alt, Keys.Tab),
                 () => "Set Goal Time",
                 () => "Set a goal time and make the stopwatch count down into the negative.");
 
@@ -117,10 +127,14 @@ namespace Stopwatch {
         protected override void OnModuleLoaded(EventArgs e)
         {
             Toggle.Value.Enabled = true;
+            Start.Value.Enabled = true;
+            Stop.Value.Enabled = true;
             SetStartTime.Value.Enabled = true;
             Reset.Value.Enabled = true;
 
             Toggle.Value.Activated += OnToggleActivated;
+            Stop.Value.Activated += OnStopActivated;
+            Start.Value.Activated += OnStartActivated;
             SetStartTime.Value.Activated += SetStartTimeActivated;
             Reset.Value.Activated += OnResetActivated;
             SoundVolume.SettingChanged += OnSoundVolumeSettingChanged;
@@ -138,7 +152,31 @@ namespace Stopwatch {
                 return;
             }
 
-            _stopwatchController.Toggle();
+            if (_stopwatchController.IsRunning) {
+                _stopwatchController.Stop();
+            } else {
+                _stopwatchController.Start(this.StartTime.Value);
+            }
+        }
+
+        private void OnStopActivated(object o, EventArgs e) {
+            if (!GameService.GameIntegration.Gw2Instance.Gw2HasFocus || GameService.Gw2Mumble.UI.IsTextInputFocused) {
+                return;
+            }
+
+            if (_stopwatchController.IsRunning) {
+                _stopwatchController.Stop();
+            }
+        }
+
+        private void OnStartActivated(object o, EventArgs e) {
+            if (!GameService.GameIntegration.Gw2Instance.Gw2HasFocus || GameService.Gw2Mumble.UI.IsTextInputFocused) {
+                return;
+            }
+
+            if (!_stopwatchController.IsRunning) {
+                _stopwatchController.Start();
+            }
         }
 
         private void SetStartTimeActivated(object o, EventArgs e)
@@ -189,6 +227,8 @@ namespace Stopwatch {
         protected override void Unload()
         {
             Toggle.Value.Activated -= OnToggleActivated;
+            Stop.Value.Activated -= OnStopActivated;
+            Start.Value.Activated -= OnStartActivated;
             SetStartTime.Value.Activated -= SetStartTimeActivated;
             Reset.Value.Activated -= OnResetActivated;
             SoundVolume.SettingChanged -= OnSoundVolumeSettingChanged;
