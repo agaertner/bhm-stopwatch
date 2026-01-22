@@ -215,13 +215,13 @@ namespace Nekres.Stopwatch.Core.Controllers
 
             if (_startTime.Equals(TimeSpan.Zero))
             {
-                _display.Text = _stopwatch.Elapsed.ToString(@"hh\:mm\:ss\.fff");
+                _display.Text = _stopwatch.Elapsed.ToString(@"hh\:mm\:ss\.f");
                 return;
             }
 
             var current = _startTime.Subtract(_stopwatch.Elapsed);
 
-            _display.Text = (current.Ticks < 0 ? "-" : "") + current.ToString(@"hh\:mm\:ss\.fff");
+            _display.Text = (current.Ticks < 0 ? "-" : "") + current.ToString(@"hh\:mm\:ss\.f");
             _display.Color = Color.Lerp(Color.White, _redShift, _stopwatch.ElapsedMilliseconds / (float)_startTime.TotalMilliseconds);
 
             if (StopwatchModule.ModuleInstance.BeepSoundDisabledSetting.Value) {
