@@ -1,18 +1,14 @@
-﻿using Blish_HUD.Controls;
+using Blish_HUD.Controls;
 using Blish_HUD.Graphics.UI;
-using Blish_HUD.Input;
 using Blish_HUD.Settings.UI.Views;
 using Microsoft.Xna.Framework;
 using Nekres.Stopwatch.UI.Models;
 using Nekres.Stopwatch.UI.Presenters;
-using System;
 using System.Linq;
-
 namespace Nekres.Stopwatch.UI.Views
 {
     public class CustomSettingsView : View<CustomSettingsPresenter>
     {
-        public event EventHandler<EventArgs> PositionButtonClick;
 
         #region SettingsView Defaults
 
@@ -96,19 +92,6 @@ namespace Nekres.Stopwatch.UI.Views
                 }
             }
 
-            var positionBtn = new StandardButton
-            {
-                Parent = _settingFlowPanel,
-                Size = new Point(160, 46),
-                Text = "Set Position",
-                BasicTooltipText = "Set the position of the timer on the user-interface."
-            };
-            positionBtn.Click += OnPositionButtonClick;
-        }
-
-        private void OnPositionButtonClick(object sender, MouseEventArgs e)
-        {
-            this.PositionButtonClick?.Invoke(sender, e);
         }
 
         protected override void Unload()

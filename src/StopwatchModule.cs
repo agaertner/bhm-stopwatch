@@ -1,4 +1,4 @@
-﻿using Blish_HUD;
+using Blish_HUD;
 using Blish_HUD.Graphics.UI;
 using Blish_HUD.Input;
 using Blish_HUD.Modules;
@@ -64,11 +64,11 @@ namespace Stopwatch {
                 () => "Stop",
                 () => "Stops the stopwatch.");
 
-            Reset = hotkeys.DefineSetting("resetKey", new KeyBinding(ModifierKeys.Alt, Keys.Escape),
+            Reset = hotkeys.DefineSetting("resetKey", new KeyBinding(ModifierKeys.Alt, Keys.R),
                 () => "Reset",
                 () => "Rewinds the stopwatch.");
 
-            SetStartTime = hotkeys.DefineSetting("setStartTimeKey", new KeyBinding(ModifierKeys.Alt, Keys.Tab),
+            SetStartTime = hotkeys.DefineSetting("setStartTimeKey", new KeyBinding(Keys.None),
                 () => "Set Goal Time",
                 () => "Set a goal time and make the stopwatch count down into the negative.");
 
@@ -77,7 +77,7 @@ namespace Stopwatch {
             StartOnMovementEnabled = general.DefineSetting("startOnMovement", false,
                 () => "Wait for Character Movement",
                 () => "When you activate the stopwatch it will delay its start until the moment you move from where you toggled it.\nIn competitive modes it will wait for camera movement instead.");
-            FontSize = general.DefineSetting("fontSize", ContentService.FontSize.Size36, 
+            FontSize = general.DefineSetting("fontSize", ContentService.FontSize.Size24, 
                 () => "Font Size",
                 () => "Sets the font size of the timer.");
 
@@ -142,6 +142,7 @@ namespace Stopwatch {
             FontColor.SettingChanged += OnFontColorSettingChanged;
             BackgroundOpacity.SettingChanged += OnBackgroundOpacitySettingChanged;
             Position.SettingChanged += OnPositionSettingChanged;
+
             // Base handler must be called
             base.OnModuleLoaded(e);
         }

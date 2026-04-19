@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Blish_HUD;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
@@ -118,8 +118,19 @@ namespace Nekres.Stopwatch.Core.Controllers
         {
             var prevValue = StopwatchModule.ModuleInstance.StartTime.Value;
             _inInputPrompt = true;
-            TimeSpanInputPrompt.ShowPrompt(TimeSpanInputPromptCallback, "Enter a start time:", 
-                prevValue.Equals(TimeSpan.Zero) ? string.Empty : prevValue.ToString(@"hh\:mm\:ss\.fff"));
+            
+            string prefill = string.Empty;
+            if (prevValue > TimeSpan.Zero) {
+                string frac = prevValue.Milliseconds > 0 ? @"\.fff" : "";
+                if (Math.Abs(prevValue.Hours) > 0)
+                    prefill = prevValue.ToString($@"h\:mm\:ss{frac}");
+                else if (Math.Abs(prevValue.Minutes) > 0)
+                    prefill = prevValue.ToString($@"m\:ss{frac}");
+                else
+                    prefill = prevValue.TotalSeconds.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+            }
+
+            TimeSpanInputPrompt.ShowPrompt(TimeSpanInputPromptCallback, "Enter a start time:", prefill);
         }
 
         private void TimeSpanInputPromptCallback(bool confirmed, TimeSpan time)
@@ -131,6 +142,11 @@ namespace Nekres.Stopwatch.Core.Controllers
 
             StopwatchModule.ModuleInstance.StartTime.Value = time;
             Reset();
+        }
+
+        private void OnSetGoalTimeClicked(object sender, EventArgs e)
+        {
+            StartAt();
         }
 
         public void Start(TimeSpan? start = null)
@@ -147,16 +163,22 @@ namespace Nekres.Stopwatch.Core.Controllers
                 return;
             }
 
-            _display?.Dispose();
+            if (_display != null) {
+                _display.Dragged -= OnDisplayMoved;
+                _display.SetGoalTimeClicked -= OnSetGoalTimeClicked;
+                _display.Dispose();
+            }
+
             _display = new StopwatchDisplay
             {
                 Parent = GameService.Graphics.SpriteScreen,
-                Size = new Point(400, 100),
                 Location = this.Position,
                 Color = this.FontColor,
                 FontSize = this.FontSize,
                 BackgroundOpacity = this.BackgroundOpacity
             };
+            _display.Dragged += OnDisplayMoved;
+            _display.SetGoalTimeClicked += OnSetGoalTimeClicked;
 
             if (start.HasValue)
             {
@@ -172,7 +194,8 @@ namespace Nekres.Stopwatch.Core.Controllers
 
             if (StopwatchModule.ModuleInstance.StartOnMovementEnabled.Value) {
                 PlayerPosition = GameService.Gw2Mumble.CurrentMap.IsCompetitiveMode ? GameService.Gw2Mumble.PlayerCamera.Position : GameService.Gw2Mumble.PlayerCharacter.Position;
-                _display.Text = $"Awaiting movement...\nX:{PlayerPosition.X:F} Y:{PlayerPosition.Y:F} Z:{PlayerPosition.Z:F}";
+                _display.IsStatusText = true;
+                _display.Text = "Waiting...";
                 return;
             }
             _stopwatch.Start();
@@ -190,8 +213,12 @@ namespace Nekres.Stopwatch.Core.Controllers
         public void Reset()
         {
             RewindSfx.Play(AudioVolume, 0, 0);
-            _display?.Dispose();
-            _display = null;
+            if (_display != null) {
+                _display.Dragged -= OnDisplayMoved;
+                _display.SetGoalTimeClicked -= OnSetGoalTimeClicked;
+                _display.Dispose();
+                _display = null;
+            }
             _stopwatch.Reset();
         }
 
@@ -200,6 +227,7 @@ namespace Nekres.Stopwatch.Core.Controllers
             if (!PlayerPosition.Equals(Vector3.Zero) && !PlayerPosition.Equals(GameService.Gw2Mumble.PlayerCharacter.Position))
             {
                 PlayerPosition = Vector3.Zero;
+                _display.IsStatusText = false;
                 _stopwatch.Start();
             }
 
@@ -213,16 +241,26 @@ namespace Nekres.Stopwatch.Core.Controllers
                 _prevTick = _stopwatch.Elapsed;
             }
 
+            // Count-up mode (no start time set)
             if (_startTime.Equals(TimeSpan.Zero))
             {
-                _display.Text = _stopwatch.Elapsed.ToString(@"hh\:mm\:ss\.fff");
+                _display.IsStatusText = false;
+                _display.Text = _stopwatch.Elapsed.Hours > 0 
+                    ? _stopwatch.Elapsed.ToString(@"hh\:mm\:ss\.fff") 
+                    : _stopwatch.Elapsed.ToString(@"mm\:ss\.fff");
+                _display.Progress = 0f;
                 return;
             }
 
+            // Countdown mode
             var current = _startTime.Subtract(_stopwatch.Elapsed);
+            var progress = (float)(_stopwatch.ElapsedMilliseconds / _startTime.TotalMilliseconds);
 
-            _display.Text = (current.Ticks < 0 ? "-" : "") + current.ToString(@"hh\:mm\:ss\.fff");
-            _display.Color = Color.Lerp(Color.White, _redShift, _stopwatch.ElapsedMilliseconds / (float)_startTime.TotalMilliseconds);
+            _display.IsStatusText = false;
+            _display.Text = (current.Ticks < 0 ? "-" : "") + 
+                (Math.Abs(current.Hours) > 0 ? current.ToString(@"hh\:mm\:ss\.fff") : current.ToString(@"mm\:ss\.fff"));
+            _display.Progress = Math.Min(progress, 1f);
+            _display.Color = Color.Lerp(Color.White, _redShift, Math.Min(progress, 1f));
 
             if (StopwatchModule.ModuleInstance.BeepSoundDisabledSetting.Value) {
                 return;
@@ -240,10 +278,21 @@ namespace Nekres.Stopwatch.Core.Controllers
             }
         }
 
+        private void OnDisplayMoved(object sender, EventArgs e)
+        {
+            var display = (StopwatchDisplay)sender;
+            _position = display.Location;
+            StopwatchModule.ModuleInstance.Position.Value = display.Location;
+        }
+
         public void Dispose()
         {
             _stopwatch.Stop();
-            _display?.Dispose();
+            if (_display != null) {
+                _display.Dragged -= OnDisplayMoved;
+                _display.SetGoalTimeClicked -= OnSetGoalTimeClicked;
+                _display.Dispose();
+            }
             
             foreach (var sfx in _rewindSfx) {
                 sfx.Dispose();
