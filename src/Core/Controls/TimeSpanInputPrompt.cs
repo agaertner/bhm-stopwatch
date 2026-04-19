@@ -1,4 +1,4 @@
-﻿using Blish_HUD;
+using Blish_HUD;
 using Blish_HUD.Content;
 using Blish_HUD.Controls;
 using Blish_HUD.Input;
@@ -58,6 +58,54 @@ namespace Nekres.Stopwatch.Core.Controls
             _bgTexture = GameService.Content.DatAssetCache.GetTextureFromAssetId(156003);
         }
 
+        private static bool SafeParseTime(string input, out TimeSpan timeSpan)
+        {
+            timeSpan = TimeSpan.Zero;
+            if (string.IsNullOrWhiteSpace(input)) return true;
+
+            // Unify fraction separators
+            input = input.Replace(',', '.');
+
+            var parts = input.Split(':');
+
+            try
+            {
+                if (parts.Length == 1)
+                {
+                    // "10.123" -> 10 seconds, 123 ms
+                    if (double.TryParse(parts[0], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var s))
+                    {
+                        timeSpan = TimeSpan.FromSeconds(s);
+                        return true;
+                    }
+                }
+                else if (parts.Length == 2)
+                {
+                    // "10:10.111" -> 10 minutes, 10.111 seconds
+                    if (double.TryParse(parts[0], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var m) && 
+                        double.TryParse(parts[1], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var s))
+                    {
+                        timeSpan = TimeSpan.FromMinutes(m).Add(TimeSpan.FromSeconds(s));
+                        return true;
+                    }
+                }
+                else if (parts.Length == 3)
+                {
+                    // "1:10:10.111" -> 1 hour, 10 minutes, 10.111 seconds
+                    if (double.TryParse(parts[0], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var h) && 
+                        double.TryParse(parts[1], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var m) && 
+                        double.TryParse(parts[2], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var s))
+                    {
+                        timeSpan = TimeSpan.FromHours(h).Add(TimeSpan.FromMinutes(m)).Add(TimeSpan.FromSeconds(s));
+                        return true;
+                    }
+                }
+            }
+            catch { }
+
+            return false;
+        }
+
         public static void ShowPrompt(Action<bool, TimeSpan> callback, string text, string defaultValue = "", string confirmButtonText = "Confirm", string cancelButtonText = "Cancel")
         {
             if (_singleton != null) {
@@ -83,7 +131,7 @@ namespace Nekres.Stopwatch.Core.Controls
                     Text = _confirmButtonText,
                     Size = _confirmButtonBounds.Size,
                     Location = _confirmButtonBounds.Location,
-                    Enabled = string.IsNullOrEmpty(_defaultValue) || TimeSpan.TryParse(_defaultValue, out var _)
+                    Enabled = SafeParseTime(_defaultValue, out _)
             };
                 _confirmButton.Click += (_, _) => this.Confirm();
             }
@@ -106,7 +154,11 @@ namespace Nekres.Stopwatch.Core.Controls
         {
             GameService.Input.Keyboard.KeyPressed -= OnKeyPressed;
             GameService.Content.PlaySoundEffectByName("button-click");
-            _callback(true, string.IsNullOrEmpty(_inputTextBox.Text) ? TimeSpan.Zero : TimeSpan.Parse(_inputTextBox.Text));
+            
+            TimeSpan timeSpan = TimeSpan.Zero;
+            SafeParseTime(_inputTextBox.Text, out timeSpan);
+            
+            _callback(true, timeSpan);
             _singleton = null;
             this.Dispose();
         }
@@ -146,16 +198,16 @@ namespace Nekres.Stopwatch.Core.Controls
                 Size = _inputTextBoxBounds.Size,
                 Location = _inputTextBoxBounds.Location,
                 Font = _font,
-                Focused = true,
+                Focused = false,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Text = _defaultValue,
-                PlaceholderText = "00:00:00.000",
+                PlaceholderText = "MM:SS, SS, .fff",
                 CursorIndex = _defaultValue.Length
             };
-            _inputTextBox.TextChanged += (o, _) =>
+            _inputTextBox.TextChanged += (o, e) =>
             {
                 var text = ((TextBox)o).Text;
-                _confirmButton.Enabled = string.IsNullOrEmpty(text) || TimeSpan.TryParse(text, out var _);
+                _confirmButton.Enabled = SafeParseTime(text, out _);
             };
         }
 
@@ -169,7 +221,7 @@ namespace Nekres.Stopwatch.Core.Controls
             spriteBatch.DrawOnCtrl(this, ContentService.Textures.Pixel, bounds, Color.Black * 0.8f);
 
             // Calculate background bounds
-            var bgTextureSize = new Point((int)textSize.Width + 12, (int)textSize.Height + 125);
+            var bgTextureSize = new Point((int)textSize.Width + 12, (int)textSize.Height + 145);
             var bgTexturePos = new Point((bounds.Width - bgTextureSize.X) / 2, (bounds.Height - bgTextureSize.Y) / 2);
             var bgBounds = new Rectangle(bgTexturePos, bgTextureSize);
 
@@ -189,10 +241,25 @@ namespace Nekres.Stopwatch.Core.Controls
             var btnMaxWith = Math.Min(100, bgBounds.Width / 2 - 10);
             _confirmButtonBounds = new Rectangle(bgBounds.Left + 5, bgBounds.Bottom - 50, btnMaxWith, 45);
             _cancelButtonBounds = new Rectangle(_confirmButtonBounds.Right + 10, _confirmButtonBounds.Y, btnMaxWith, 45);
-            _inputTextBoxBounds = new Rectangle(_confirmButtonBounds.X, _confirmButtonBounds.Y - 55, bgBounds.Width - 10, 45);
+            _inputTextBoxBounds = new Rectangle(_confirmButtonBounds.X, _confirmButtonBounds.Y - 70, bgBounds.Width - 10, 45);
 
             this.CreateTextInput();
             this.CreateButtons();
+
+            // Draw parsed value label
+            if (_inputTextBox != null && !string.IsNullOrWhiteSpace(_inputTextBox.Text))
+            {
+                if (SafeParseTime(_inputTextBox.Text, out var timeSpan))
+                {
+                    string ms = timeSpan.Milliseconds > 0 ? $" {timeSpan.Milliseconds}ms" : "";
+                    string parsedText = timeSpan.TotalHours >= 1 
+                        ? $"{(int)timeSpan.TotalHours}h {timeSpan.Minutes}m {timeSpan.Seconds}s{ms}" 
+                        : $"{(int)timeSpan.TotalMinutes}m {timeSpan.Seconds}s{ms}";
+                    spriteBatch.DrawStringOnCtrl(this, parsedText, GameService.Content.DefaultFont14, 
+                        new Rectangle(_inputTextBoxBounds.X, _inputTextBoxBounds.Bottom, _inputTextBoxBounds.Width, 20),
+                        Color.LightGray, false, HorizontalAlignment.Center, VerticalAlignment.Middle);
+                }
+            }
         }
     }
 }
