@@ -4,7 +4,7 @@
   "namespace": "Nekres.Stopwatch",
   "package": "Stopwatch.dll",
   "manifest_version": 1,
-  "description": "A stopwatch for the thrill seekers out there. Supports counting down from a given time.",
+  "description": "A stopwatch for the thrill seekers and record breakers out there. Supports counting down from a given time.",
   "dependencies": {
     "bh.blishhud": ">=1.3.0"
   },
